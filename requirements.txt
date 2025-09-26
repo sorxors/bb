@@ -1,0 +1,11 @@
+PyPDF2
+pypdf
+faiss-cpu
+sentence-transformers
+chromadb
+openai
+tiktoken
+numpy
+Flask
+Flask-Cors
+gunicorn
