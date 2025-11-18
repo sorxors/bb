@@ -2,19 +2,15 @@ import os
 import re
 import numpy as np
 import faiss
-from openai import OpenAI
+import openai  # <-- NEW
 from PyPDF2 import PdfReader
 from sentence_transformers import SentenceTransformer
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 # ---------------- API Setup ----------------
-OPENROUTER_API_KEY = "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"
-client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=OPENROUTER_API_KEY
-)
-MODEL_NAME = "deepseek/deepseek-chat-v3.1:free"
+openai.api_key = "YOUR_OPENAI_API_KEY"   # <-- PUT YOUR KEY HERE
+MODEL_NAME = "gpt-5-nano-2025-08-07"     # <-- UPDATED MODEL
 
 # ---------------- Load PDF ----------------
 pdf_path = "Canadian_Immigration_Knowledge_Base.pdf"
@@ -126,14 +122,15 @@ The most important purpose of the chatbot is not only to answer questions but to
 def chat(user_query, model=MODEL_NAME):
     context = "\n".join(retrieve(user_query))
     try:
-        completion = client.chat.completions.create(
+        completion = openai.ChatCompletion.create(
             model=model,
             messages=[
                 {"role": "system", "content": SALES_SYSTEM_PROMPT + "\n\nContext:\n" + context},
                 {"role": "user", "content": user_query},
             ],
         )
-        return completion.choices[0].message.content
+        return completion["choices"][0]["message"]["content"]
+
     except Exception as e:
         return f"⚠️ API Error: {str(e)}"
 
@@ -141,11 +138,9 @@ def chat(user_query, model=MODEL_NAME):
 app = Flask(__name__)
 CORS(app)
 
-# --- NEW HEALTH CHECK ROUTE ---
 @app.route("/")
 def health_check():
     return "The API is running!"
-# --- END OF HEALTH CHECK ---
 
 @app.route("/chat", methods=["POST"])
 def handle_chat():
@@ -153,7 +148,7 @@ def handle_chat():
     if not user_message:
         return jsonify({"error": "No message provided"}), 400
 
-    bot_response = chat(user_message) 
+    bot_response = chat(user_message)
     return jsonify({"reply": bot_response})
 
 if __name__ == "__main__":
